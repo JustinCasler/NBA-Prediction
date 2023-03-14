@@ -11,9 +11,9 @@ from sklearn.model_selection import train_test_split
 pd.options.display.max_rows = 9999
 pd.options.display.max_columns = 9999
 # load data and arrange into Pandas dataframe
-df = read_csv("data.csv")
+df = read_csv("data/data.csv")
 feature_names = ['OFF_RATING', 'DEF_RATING', 'NET_RATING', 'AST_PCT', 'AST_TOV', 'AST_RATIO', 'OREB_PCT', 'DREB_PCT', 'REB_PCT', 'TM_TOV_PCT', 'EFG_PCT', 'TS_PCT', 'PACE', 'POSS', 'PIE', 'FGM', 'FG_PCT', 'FG3M', 'FG3_PCT', 'FTM', 'FT_PCT', 'BLK', 'AVG_PTS', 'CONTEST_SHOT', 'CHARGES', 'SCREEN_AST', 'LOOSE_BALL', 'BOX_OUT', 'DAYS', 'INJ', 'GP', 'PTS', 'H/A']+['OPP_OFF_RATING', 'OPP_DEF_RATING', 'OPP_NET_RATING', 'OPP_AST_PCT', 'OPP_AST_TOV', 'OPP_AST_RATIO', 'OPP_OREB_PCT', 'OPP_DREB_PCT', 'OPP_REB_PCT', 'OPP_TM_TOV_PCT', 'OPP_EFG_PCT', 'OPP_TS_PCT', 'OPP_PACE', 'OPP_POSS', 'OPP_PIE', 'OPP_FGM', 'OPP_FG_PCT', 'OPP_FG3M', 'OPP_FG3_PCT', 'OPP_FTM', 'OPP_FT_PCT', 'OPP_BLK', 'OPP_AVG_PTS', 'OPP_CONTEST_SHOT', 'OPP_CHARGES', 'OPP_SCREEN_AST', 'OPP_LOOSE_BALL', 'OPP_BOX_OUT', 'OPP_DAYS', 'OPP_INJ', 'OPP_GP', 'OPP_PTS', 'OPP_H/A']
-#print(df.describe())
+print(df.describe())
 #Split into features and target (Price)
 newdf = df.drop('PTS', axis = 1)
 X = df.drop(['PTS', 'OPP_PTS'], axis = 1)
@@ -105,7 +105,7 @@ print('Mean absolute error using decision tree: ', mae_dt)
 #Random forest.
 #Increase number of tress and see the effect
 from sklearn.ensemble import RandomForestRegressor
-model = RandomForestRegressor(n_estimators = 130, random_state=30)
+model = RandomForestRegressor(n_estimators = 50, random_state=30)
 model.fit(X_train_scaled, y_train)
 
 y_pred_RF = model.predict(X_test_scaled)

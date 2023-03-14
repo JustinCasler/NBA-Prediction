@@ -1,6 +1,6 @@
 # First we import the endpoint
 # We will be using pandas dataframes to manipulate the data
-from nba_api.stats.endpoints import cumestatsteamgames, boxscoretraditionalv2, hustlestatsboxscore, boxscoreadvancedv2, boxscoresummaryv2, playerestimatedmetrics
+from nba_api.stats.endpoints import cumestatsteamgames, boxscoretraditionalv2, hustlestatsboxscore, boxscoreadvancedv2, boxscoresummaryv2, playerestimatedmetrics, playergamelog
 from nba_api.stats.static import teams
 from requests.exceptions import ReadTimeout
 import json
@@ -15,16 +15,16 @@ nba_teams = teams.get_teams()
 TEAMS = {}
 for team in nba_teams: 
     TEAMS[team["id"]] = team["abbreviation"]
-
 TEAM_STATS = {}
-for id in TEAMS.keys():
-    TEAM_STATS[id] = {'OFF_RATING' : 0, 'DEF_RATING' : 0, 'NET_RATING' : 0, 'AST_PCT' : 0, "AST_TOV" : 0, 'AST_RATIO' : 0, 
-                      'OREB_PCT' : 0, 'DREB_PCT' : 0, 'REB_PCT' : 0, 'TM_TOV_PCT' : 0, 'EFG_PCT' : 0, 'TS_PCT' : 0,
-                       "PACE" : 0, 'POSS': 0, 'PIE' : 0, 'FGM' : 0, 'FG_PCT' : 0, 'FG3M' : 0, 'FG3_PCT' : 0,
-                      'FTM' : 0, 'FT_PCT' : 0, 'BLK' : 0, 'AVG_PTS' : 0, "CONTEST_SHOT" : 0, "CHARGES" : 0, "SCREEN_AST" : 0,
-                      'LOOSE_BALL' : 0, "BOX_OUT" : 0,  "DAYS" : 0, "INJ" : 0,
-                      'GP' : 0, 'PTS' : 0, "H/A" : None, 'DATE' : None
-                        }
+def init_teams():
+    for id in TEAMS.keys():
+        TEAM_STATS[id] = {'OFF_RATING' : 0, 'DEF_RATING' : 0, 'NET_RATING' : 0, 'AST_PCT' : 0, "AST_TOV" : 0, 'AST_RATIO' : 0, 
+                        'OREB_PCT' : 0, 'DREB_PCT' : 0, 'REB_PCT' : 0, 'TM_TOV_PCT' : 0, 'EFG_PCT' : 0, 'TS_PCT' : 0,
+                        "PACE" : 0, 'POSS': 0, 'PIE' : 0, 'FGM' : 0, 'FG_PCT' : 0, 'FG3M' : 0, 'FG3_PCT' : 0,
+                        'FTM' : 0, 'FT_PCT' : 0, 'BLK' : 0, 'AVG_PTS' : 0, "CONTEST_SHOT" : 0, "CHARGES" : 0, "SCREEN_AST" : 0,
+                        'LOOSE_BALL' : 0, "BOX_OUT" : 0,  "DAYS" : 0, "INJ" : 0,
+                        'GP' : 0, 'PTS' : 0, "H/A" : None, 'DATE' : None
+                            }
 def b2b(team1, date2):
     date2 = date2[4]['rowSet'][0][0]
     date2 = date2[date2.find(','):]
@@ -39,6 +39,8 @@ def b2b(team1, date2):
     TEAM_STATS[team1[1]]['DAYS'] = days
 
 #is called after every game to update the teams stats that played 
+#FOR SECOND DATABASE instead of updateing, keep asecond TEAM_STATS{} but instead of values as ints values are lists that store 10 most recent games stats, then
+#use MOD to figure out which index to swap for the most recent game
 def update_stats(team1, trad1, hust1):
     GP = TEAM_STATS[team1[1]]['GP']
     '''
@@ -83,9 +85,6 @@ def update_stats(team1, trad1, hust1):
     TEAM_STATS[team1[1]]['INJ'] = 0
     TEAM_STATS[team1[1]]['GP'] += 1
 
-t1 = list(TEAM_STATS[1610612740].keys())
-del t1[-1]
-print(len(t1))
 '''
 with open("data.csv", mode = "w") as csvfile:
     t1 = list(TEAM_STATS[1610612740].keys())
@@ -101,7 +100,7 @@ with open("data.csv", mode = "w") as csvfile:
 SEASONS = ["2017", "2018", "2019", "2020", "2021", "2022"]
 all_games = {"2017":[], "2018":[], "2019":[], "2020":[], "2021":[], "2022":[]}
 
-#is used to populate json file with key = season and values of each season being an arrau of game_ids
+#is used to populate json file with key = season and values of each season being an array of game_ids
 game_file = "game2.json"
 def getSeasonGames():
     for Season in SEASONS:
@@ -130,29 +129,32 @@ def getSeasonGames():
         json.dump(all_games, outfile)
     return all_games
 
-player_seasons = ["2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"]
+player_seasons = ["2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22"]
 all_players = {"2017":{}, "2018":{}, "2019":{}, "2020":{}, "2021":{}, "2022":{}}
 #write to a json where every key is a season and every value is a dict where each key is a player id and the value is [avg min played, net rating]
+#creates a dict where the keys are seasons and the value is a dict where the keys are player ids and the values are {'MIN': 0, 'NET': 0, 'GP': 0}
 def player_stats():
     for idx, seasons in enumerate(player_seasons):
         players = playerestimatedmetrics.PlayerEstimatedMetrics(season = seasons).get_dict()['resultSet']['rowSet']
+        print(players)
         for player in players:
             curr_season = list(all_players.keys())
             all_players[curr_season[idx]][player[0]] = [player[6], player[9]]
-
-    with open("players1.json", "w") as outfile:
+    
+    with open("players_v2.json", "w") as outfile:
         json.dump(all_players, outfile)
+    
 
-
-f = open('games.json')
-g = open('players.json')
+f = open('database/games.json')
+g = open('database/players_v2.json')
 data = json.load(f) #data is all games
 pdata = json.load(g) #pdata is all players
 
 def get_all_stats():
     #season is a list of all games in that season
     #change [1:] to get diff season
-    for i, season in enumerate(list(data.values())[5:]):
+    init_teams()
+    for i, season in enumerate(list(data.values())):
         print(season)
         #game is game_id
         for idx, game in enumerate(season):
@@ -186,7 +188,7 @@ def get_all_stats():
                     #This checks for inactive players min and if abover thershold then adds their net rating
                     THRESHOLD = 12
                     year = list(data.keys())[i]
-                    #player looks like [1628444, 'Jabari', 'Bird', '26', 1610612738, 'Boston', 'Celtics', 'BOS']
+                    #player looks like [1628444, 'Jabari', 'Bird', '26', 1610612738, 'Boston', 'Celtics', 'BOS']           
                     for j, player in enumerate(inactive[3]['rowSet']):                        
                         idv = inactive[3]['rowSet'][j]
                         try:
@@ -205,8 +207,9 @@ def get_all_stats():
                             del t1[-1]
                             t2 = list(TEAM_STATS[team2[1]].values())
                             del t2[-1]
-                            writer_object.writerow(t1 + t2)
-                            writer_object.writerow(t2 + t1)
+                            print(t1)
+                            #writer_object.writerow(t1 + t2)
+                            #writer_object.writerow(t2 + t1)
                             csvfile.close()
                     #update TEAMSTATS dict
                     update_stats(team1, trad1, hust1)
@@ -218,7 +221,7 @@ def get_all_stats():
                     pass
         print(season)
         return(season)
-
+get_all_stats()
 #get_all_stats()
 #ex, get the players who inactive and total their counting stats or advanced stats or something
 #days since last played
@@ -226,3 +229,5 @@ def get_all_stats():
 '''pd.set_option('display.max_rows', None, 'display.max_columns', None)
 df = pd.read_csv("data.csv")
 print(df)'''
+
+
